@@ -9,7 +9,7 @@ sign:
 clean:
 	rm -rf goPR.app/Contents/MacOS/goPR
 
-run:
-	go run cmd/main.go
+run: goPR.app/Contents/MacOS/goPR sign
+	goPR.app/Contents/MacOS/goPR
 
 .PHONY: clean sign run
