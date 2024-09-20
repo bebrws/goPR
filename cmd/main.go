@@ -51,7 +51,7 @@ func getPRPaginator(client *github.Client, org, repo string) func() ([]*github.P
 		fmt.Println("Making page request wiht: ", prReqOpts.Page)
 		prs, resp, err := client.PullRequests.List(context.Background(), org, repo, prReqOpts)
 		if err != nil {
-			fmt.Printf("Error listing Review Comments for %s/%s: %s", org, repo, err)
+			fmt.Printf("Error listing Review Comments for %s/%s: %s\n", org, repo, err)
 			return nil, err
 		}
 		if resp != nil {
@@ -71,7 +71,7 @@ func getReviewPaginator(client *github.Client, org, repo string, prNumber int) f
 	return func() ([]*github.PullRequestReview, error) {
 		revs, resp, err := client.PullRequests.ListReviews(context.Background(), org, repo, prNumber, &listOps)
 		if err != nil {
-			fmt.Printf("Error listing Review Comments for %s/%s: %s", org, repo, err)
+			fmt.Printf("Error listing Review Comments for %s/%s: %s\n", org, repo, err)
 			return revs, err
 		}
 		if resp != nil {
@@ -92,7 +92,7 @@ func getReviewCommentsPaginator(client *github.Client, org, repo string, prNumbe
 	return func() ([]*github.PullRequestComment, error) {
 		revComments, resp, err := client.PullRequests.ListReviewComments(context.Background(), config.Org, config.Repo, prNumber, revID, &listOps)
 		if err != nil {
-			fmt.Printf("Error listing Review Comments for %s/%s: %s", org, repo, err)
+			fmt.Printf("Error listing Review Comments for %s/%s: %s\n", org, repo, err)
 			return revComments, err
 		}
 		if resp != nil {
@@ -137,18 +137,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	for i, pr := range allPrs {
-		fmt.Printf("%d. PR title: %s\n", i+1, *pr.Title)
+	for _, pr := range allPrs {
+		fmt.Printf("PR %d. PR title: %s\nPR body: %s\n", *pr.Number, *pr.Title, *pr.Body)
 
 		allRevs, err := paginate(getReviewPaginator(client, config.Org, config.Repo, *pr.Number))
 		if err != nil {
 			fmt.Println("Error getting PR Reviews", err)
 			os.Exit(1)
 		}
-
-		fmt.Println("Reviews for PR: ", *pr.Title, " ---- # ", *pr.Number)
 		for j, rev := range allRevs {
-			fmt.Printf("  %d. Review: %s from %s\n", j+1, *rev.Body, rev.User.GetLogin())
+			fmt.Printf("  %d. Review: %s from %s\n", j+1, rev.GetBody(), rev.User.GetLogin())
 
 			allRevs, err := paginate(getReviewCommentsPaginator(client, config.Org, config.Repo, *pr.Number, *rev.ID))
 			if err != nil {
@@ -157,7 +155,7 @@ func main() {
 			}
 
 			for j, rev := range allRevs {
-				fmt.Printf("      %d. Review Comment: %s from %s\n", j+1, *rev.Body, rev.User.GetLogin())
+				fmt.Printf("      %d. Review Comment: %s from %s\n", j+1, rev.GetBody(), rev.User.GetLogin())
 			}
 		}
 	}
