@@ -74,14 +74,14 @@ func main() {
 			log.Fatal("Error writing state file:", err)
 		}
 	} else {
-	err = json.Unmarshal(oldStateData, &oldState)
-	if err != nil {
-		log.Fatal("Error unmarshalling JSON:", err)
+		err = json.Unmarshal(oldStateData, &oldState)
+		if err != nil {
+			log.Fatal("Error unmarshalling JSON:", err)
+		}
 	}
-}
 
 	diffs := config.CompareStates(oldState, *newGHState)
-	changeString := strings.Join(diffs, "")
+	changeString := strings.Join(diffs, "\n")
 	log.Println("Changes: ", changeString)
 
 	// Write the new state to the state file
@@ -93,9 +93,11 @@ func main() {
 	if err != nil {
 		log.Fatal("Error writing state file:", err)
 	}
-	nc := notify.NewNotificationChannel("com.bebrws.goPR")
-	_, err = nc.Send("PR Changes", changeString)
-	if err != nil {
-		log.Println(err)
+	if len(diffs) != 0 {
+		nc := notify.NewNotificationChannel("com.bebrws.goPR")
+		_, err = nc.Send("PR Changes", changeString)
+		if err != nil {
+			log.Println("Error sending notification: ", err)
+		}
 	}
 }

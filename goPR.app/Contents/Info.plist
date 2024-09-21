@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleExecutable</key>
 	<string>goPR</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Created to notify on GH changes</string>	
 	<key>CFBundleIdentifier</key>
 	<string>com.bebrws.goPR</string>
 	<key>CFBundlePackageType</key>
@@ -15,7 +17,7 @@
 	<key>NSAppleEventsUsageDescription</key>
 	<string>goPR requires sending apple events</string>
 	<key>CFBundleIconFile</key>
-	<string>icon</string>
+	<string>icon.icns</string>
 	<key>CFBundleVersion</key>
 	<string>1000</string>
 	<key>CFBundleShortVersionString</key>
