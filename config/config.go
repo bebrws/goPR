@@ -4,11 +4,12 @@ const (
 	PerPage = 10 // Drop this down to test out the pagination!
 	PrState = "open"
 	ConfigFileName = ".goPR.json"
+	StateFileName = ".goPR.json"
 )
 
 type Repo struct {
-	Org  string
-	Repo string
+	Org  string `json:"org"`
+	Repo string `json:"repo"`
 }
 type Config struct {
 	Repos []Repo `json:"repos"`
@@ -32,8 +33,9 @@ type PR struct {
 
 type RepoState struct {
 	PRs []PR `json:"prs"`
+	Name string `json:"repoName"`
 }
-type CurrentState struct {
+type GHState struct {
 	RepoStates []RepoState `json:"repoStates"`
 }
 
