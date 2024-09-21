@@ -25,10 +25,10 @@ func CompareStates(oldState, newState GHState) []string {
 							for _, comment := range review.Comments {
 								if oldComment := findCommentByID(oldReview.Comments, comment.ID); oldComment != nil {
 									if comment.Body != oldComment.Body {
-										changes = append(changes, "Review Comment Body Change: "+repo.Name+" PR#"+strconv.Itoa(int(pr.Number))+" Reviewer: "+review.Login+" CommentID: "+strconv.Itoa(int(comment.ID))+"\n")
+										changes = append(changes, "Review Comment Body Change: "+repo.Name+" PR#"+strconv.Itoa(int(pr.Number))+" Reviewer: "+review.Login+" CommentID: "+strconv.Itoa(int(comment.ID))+" --- " + comment.Body + "\n")
 									}
 								} else {
-									changes = append(changes, "Review Comment Added: "+repo.Name+" PR#"+strconv.Itoa(int(pr.Number))+" Reviewer: "+review.Login+" CommentID: "+strconv.Itoa(int(comment.ID))+"\n")
+									changes = append(changes, "Review Comment Added: "+repo.Name+" PR#"+strconv.Itoa(int(pr.Number))+" Reviewer: "+review.Login+" CommentID: "+strconv.Itoa(int(comment.ID))+" ---  "+comment.Body+"\n")
 								}
 							}
 						} else {
