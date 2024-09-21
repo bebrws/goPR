@@ -75,6 +75,15 @@ func main() {
 	changeString := strings.Join(diffs, "\n")
 	log.Println("Changes: ", changeString)
 
+	// Write the new state to the state file
+	newStateData, err := json.Marshal(newGHState)
+	if err != nil {
+		log.Fatal("Error marshalling JSON:", err)
+	}
+	err = os.WriteFile(stateFilePath, newStateData, 0644)
+	if err != nil {
+		log.Fatal("Error writing state file:", err)
+	}
 	// nc := notify.NewNotificationChannel("com.bebrws.goPR")
 	// _, err = nc.Send("PR Changes", changeString)
 	// if err != nil {

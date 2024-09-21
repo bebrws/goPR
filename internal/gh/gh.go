@@ -36,12 +36,15 @@ func GetRepoState(client *github.Client, cfg *config.Config) (*config.GHState, e
 
 				for j, revComment := range allRevComments {
 					cmts = append(cmts, config.PRReviewComment{
+						ID: revComment.GetID(),
+						UpdatedAt: revComment.GetUpdatedAt().Time,
 						Login: revComment.User.GetLogin(),
 						Body:  revComment.GetBody(),
 					})
 					fmt.Printf("      %d. Review Comment: %s from %s\n", j+1, revComment.GetBody(), revComment.User.GetLogin())
 				}
 				revs = append(revs, config.PRReview{
+					ID: rev.GetID(),
 					Login:    rev.User.GetLogin(),
 					Body:     rev.GetBody(),
 					Comments: cmts,

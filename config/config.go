@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 const (
 	PerPage = 10 // Drop this down to test out the pagination!
 	PrState = "open"
@@ -16,11 +18,14 @@ type Config struct {
 }
 
 type PRReviewComment  struct {
+	ID int64 `json:"commentID"`
+	UpdatedAt time.Time `json:"commentUpdatedAt"`
 	Login string `json:"commentLogin"`
 	Body string `json:"commentBody"`
 }
 
 type PRReview  struct {
+	ID int64 `json:"reviewID"`
 	Login string `json:"reviewLogin"`
 	Body string `json:"reviewBody"`
 	Comments []PRReviewComment `json:"reviewComments"`
