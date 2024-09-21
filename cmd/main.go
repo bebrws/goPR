@@ -12,7 +12,6 @@ import (
 	"github.com/bebrws/goPR/internal/gh"
 
 	"github.com/bebrws/goPR/internal/notify"
-	"github.com/google/go-github/v65/github"
 )
 
 
@@ -28,9 +27,9 @@ func main() {
 		log.Fatal("GH_TOKEN is not set")
 		ghToken = "" // Default value
 	}
-	client := github.NewClient(nil).WithAuthToken(ghToken)
+	client := gh.NewClientOrPanic(ghToken)
 	if client == nil {
-		log.Fatal("Failed to create client")
+		log.Fatal("Failed to get GitHub PullRequest client")
 	}
 
 	homeDir, err := os.UserHomeDir()
@@ -55,9 +54,11 @@ func main() {
 	}
 
 	newGHState, err := gh.GetRepoState(client, &cfg)
-
 	if err != nil {
-		log.Fatal("Failed to get repo state")
+		if err.(*gh.RateLimitError) != nil {
+			log.Fatal("Rate limit reached")
+		}
+		log.Fatal("Failed to get repo state: ", err)
 	}
 
 	oldState := config.GHState{}

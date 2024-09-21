@@ -12,7 +12,7 @@ func GetRepoState(client GitHubPullRequestsClient, cfg *config.Config) (*config.
 	for _, repo := range cfg.Repos {
 		allPrs, err := paginate(nil, GetPRPaginator(client, repo.Org, repo.Repo))
 		if err != nil {
-			fmt.Println("Error getting PRs", err)
+			return &state, err
 		}
 		prs := []config.PR{}
 		for _, pr := range allPrs {
@@ -21,7 +21,7 @@ func GetRepoState(client GitHubPullRequestsClient, cfg *config.Config) (*config.
 
 			allRevs, err := paginate(nil, GetReviewPaginator(client, repo.Org, repo.Repo, *pr.Number))
 			if err != nil {
-				fmt.Println("Error getting PR Reviews", err)
+				return &state, err
 			}
 			for j, rev := range allRevs {
 				cmts := []config.PRReviewComment{}
@@ -30,7 +30,7 @@ func GetRepoState(client GitHubPullRequestsClient, cfg *config.Config) (*config.
 
 				allRevComments, err := paginate(nil, GetReviewCommentsPaginator(client, repo.Org, repo.Repo, *pr.Number, *rev.ID))
 				if err != nil {
-					fmt.Println("Error getting PR Reviews", err)
+					return &state, err
 				}
 
 				for j, revComment := range allRevComments {

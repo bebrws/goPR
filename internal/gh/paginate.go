@@ -2,11 +2,30 @@ package gh
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/bebrws/goPR/config"
 	"github.com/google/go-github/v65/github"
 )
+
+type RateLimitError struct {
+    Code    int
+    Message string
+}
+
+// Implement the Error() method to satisfy the error interface
+func (e *RateLimitError) Error() string {
+    return fmt.Sprintf("Error %d: %s", e.Code, e.Message)
+}
+
+func NewRateLimitError(message string) *RateLimitError {
+	return &RateLimitError{
+		Code:    http.StatusTooManyRequests,
+		Message: message,
+	}
+}
 
 type RateLimitedPage struct {
 	github.ListOptions
@@ -45,6 +64,14 @@ type GitHubPullRequestsClient interface {
 	ListReviewComments(ctx context.Context, owner, repo string, number int, reviewID int64, opts *github.ListOptions) ([]*github.PullRequestComment, *github.Response, error)
 }
 
+func NewClientOrPanic(ghToken string) *github.PullRequestsService {
+	client := github.NewClient(nil).WithAuthToken(ghToken)
+	if client == nil {
+		log.Fatal("Failed to create GitHub client")
+	}
+	return client.PullRequests
+}
+
 func paginate[R PaginateAbleGithubTypes](opts *RateLimitedPage, pf func(opts *RateLimitedPage) ([]R, *github.Response, error)) ([]R, error) {
 	var listOps *RateLimitedPage
 	if opts == nil {
@@ -63,7 +90,8 @@ func paginate[R PaginateAbleGithubTypes](opts *RateLimitedPage, pf func(opts *Ra
 		listOps.Update( resp )
 
 		if resp.Rate.Remaining == 0 {
-			log.Fatal("Rate limit reached, time to panic") // TODO: Return a special error or boolean?
+			log.Println("Rate limit reached, time to panic")
+			return allItems, NewRateLimitError("Rate limit reached")
 		} else if resp != nil {
 			log.Println("Rate limit remaining:", resp.Rate.Remaining)
 		}
