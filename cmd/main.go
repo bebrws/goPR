@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-github/v65/github"
 )
 
+
 func main() {
 	ghUser := os.Getenv("GH_USER")
 	if ghUser == "" {

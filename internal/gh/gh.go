@@ -4,14 +4,13 @@ import (
 	"fmt"
 
 	"github.com/bebrws/goPR/config"
-	"github.com/google/go-github/v65/github"
 )
 
-func GetRepoState(client *github.Client, cfg *config.Config) (*config.GHState, error) {
+func GetRepoState(client GitHubPullRequestsClient, cfg *config.Config) (*config.GHState, error) {
 	state := config.GHState{}
 
 	for _, repo := range cfg.Repos {
-		allPrs, err := paginate(GetPRPaginator(client, repo.Org, repo.Repo))
+		allPrs, err := paginate(nil, GetPRPaginator(client, repo.Org, repo.Repo))
 		if err != nil {
 			fmt.Println("Error getting PRs", err)
 		}
@@ -20,7 +19,7 @@ func GetRepoState(client *github.Client, cfg *config.Config) (*config.GHState, e
 			revs := []config.PRReview{}
 			fmt.Printf("PR %d. PR title: %s\nPR body: %s\n", *pr.Number, *pr.Title, *pr.Body)
 
-			allRevs, err := paginate(GetReviewPaginator(client, repo.Org, repo.Repo, *pr.Number))
+			allRevs, err := paginate(nil, GetReviewPaginator(client, repo.Org, repo.Repo, *pr.Number))
 			if err != nil {
 				fmt.Println("Error getting PR Reviews", err)
 			}
@@ -29,7 +28,7 @@ func GetRepoState(client *github.Client, cfg *config.Config) (*config.GHState, e
 				
 				fmt.Printf("  %d. Review: %s from %s\n", j+1, rev.GetBody(), rev.User.GetLogin())
 
-				allRevComments, err := paginate(GetReviewCommentsPaginator(client, repo.Org, repo.Repo, *pr.Number, *rev.ID))
+				allRevComments, err := paginate(nil, GetReviewCommentsPaginator(client, repo.Org, repo.Repo, *pr.Number, *rev.ID))
 				if err != nil {
 					fmt.Println("Error getting PR Reviews", err)
 				}

@@ -2,14 +2,32 @@ package gh
 
 import (
 	"context"
-	"fmt"
+	"log"
 
 	"github.com/bebrws/goPR/config"
 	"github.com/google/go-github/v65/github"
 )
 
-type PaginateAble interface {
+type RateLimitedPage struct {
 	github.ListOptions
+	// Rate *github.Rate
+	resp *github.Response
+}
+
+func NewRateLimitedPage(opts *RateLimitedPage, resp *github.Response) *RateLimitedPage {
+	return &RateLimitedPage{
+		ListOptions: opts.ListOptions,
+		resp: resp,
+	}
+}
+
+func (lo *RateLimitedPage) Update(resp *github.Response) {
+	lo.resp = resp
+	lo.Page = lo.resp.NextPage
+}
+
+func (lo *RateLimitedPage) GetRateLimitRemaining() int {
+	return lo.resp.Rate.Remaining
 }
 
 // What is a RepositoryComment??
@@ -21,11 +39,36 @@ type PaginateAbleGithubTypes interface {
 	*github.PullRequest | *github.Comment | *github.PullRequestComment | *github.PullRequestReview | *github.RepositoryComment
 }
 
-func paginate[R PaginateAbleGithubTypes](pf func() ([]R, error)) ([]R, error) {
+type GitHubPullRequestsClient interface {
+	List(ctx context.Context, owner string, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
+	ListReviews(ctx context.Context, owner, repo string, number int, opts *github.ListOptions) ([]*github.PullRequestReview, *github.Response, error)
+	ListReviewComments(ctx context.Context, owner, repo string, number int, reviewID int64, opts *github.ListOptions) ([]*github.PullRequestComment, *github.Response, error)
+}
+
+func paginate[R PaginateAbleGithubTypes](opts *RateLimitedPage, pf func(opts *RateLimitedPage) ([]R, *github.Response, error)) ([]R, error) {
+	var listOps *RateLimitedPage
+	if opts == nil {
+		rlp := RateLimitedPage{
+			ListOptions: github.ListOptions{
+				PerPage: config.PerPage,
+			},
+		}
+		listOps = NewRateLimitedPage(&rlp, nil)
+	} else {
+		listOps = NewRateLimitedPage(opts, nil)
+	}
 	allItems := []R{}
 	for {
-		items, err := pf()
-		if err != nil {
+		items, resp, err := pf(listOps)
+		listOps.Update( resp )
+
+		if resp.Rate.Remaining == 0 {
+			log.Fatal("Rate limit reached, time to panic") // TODO: Return a special error or boolean?
+		} else if resp != nil {
+			log.Println("Rate limit remaining:", resp.Rate.Remaining)
+		}
+		
+		if err != nil {	
 			return allItems, err
 		}
 		if len(items) == 0 {
@@ -39,69 +82,24 @@ func paginate[R PaginateAbleGithubTypes](pf func() ([]R, error)) ([]R, error) {
 	return allItems, nil
 }
 
-func GetPRPaginator(client *github.Client, org, repo string) func() ([]*github.PullRequest, error) {
-	prReqOpts := &github.PullRequestListOptions{
-		ListOptions: github.ListOptions{PerPage: config.PerPage},
-		State: 	 config.PrState,
-	}
-	return func() ([]*github.PullRequest, error) {
-		// Get the PRs
-		fmt.Println("Making page request wiht: ", prReqOpts.Page)
-		prs, resp, err := client.PullRequests.List(context.Background(), org, repo, prReqOpts)
-		if err != nil {
-			fmt.Printf("Error listing Review Comments for %s/%s: %s\n", org, repo, err)
-			return nil, err
+func GetPRPaginator(client GitHubPullRequestsClient, org, repo string) func(opts *RateLimitedPage) ([]*github.PullRequest, *github.Response, error) {
+	return func(opts *RateLimitedPage) ([]*github.PullRequest, *github.Response, error) {
+		prLO := github.PullRequestListOptions{
+			ListOptions: opts.ListOptions,
+			State: config.PrState,
 		}
-		if resp != nil {
-			fmt.Println("Rate limit remaining:", resp.Rate.Remaining)
-		}
-		if len(prs) == 0 {
-			fmt.Println("No more PRs found")
-			return prs, nil
-		}
-		prReqOpts.Page = resp.NextPage
-		return prs, nil
+		return client.List(context.Background(), org, repo, &prLO)
 	}
 }
 
-func GetReviewPaginator(client *github.Client, org, repo string, prNumber int) func() ([]*github.PullRequestReview, error) {
-	listOps := github.ListOptions{PerPage: config.PerPage}
-	return func() ([]*github.PullRequestReview, error) {
-		revs, resp, err := client.PullRequests.ListReviews(context.Background(), org, repo, prNumber, &listOps)
-		if err != nil {
-			fmt.Printf("Error listing Review Comments for %s/%s: %s\n", org, repo, err)
-			return revs, err
-		}
-		if resp != nil {
-			fmt.Println("Rate limit remaining:", resp.Rate.Remaining)
-		}
-		if len(revs) == 0 {
-			fmt.Println("No more PRs found")
-			return revs, nil
-		}
-
-		listOps.Page = resp.NextPage
-		return revs, nil
+func GetReviewPaginator(client GitHubPullRequestsClient, org, repo string, prNumber int) func(opts *RateLimitedPage) ([]*github.PullRequestReview, *github.Response, error) {
+	return func(opts *RateLimitedPage) ([]*github.PullRequestReview, *github.Response, error) {
+		return client.ListReviews(context.Background(), org, repo, prNumber, &opts.ListOptions)
 	}
 }
 
-func GetReviewCommentsPaginator(client *github.Client, org, repo string, prNumber int, revID int64) func() ([]*github.PullRequestComment, error) {
-	listOps := github.ListOptions{PerPage: config.PerPage}
-	return func() ([]*github.PullRequestComment, error) {
-		revComments, resp, err := client.PullRequests.ListReviewComments(context.Background(), org, repo, prNumber, revID, &listOps)
-		if err != nil {
-			fmt.Printf("Error listing Review Comments for %s/%s: %s\n", org, repo, err)
-			return revComments, err
-		}
-		if resp != nil {
-			fmt.Println("Rate limit remaining:", resp.Rate.Remaining)
-		}
-		if len(revComments) == 0 {
-			fmt.Println("No Review Comments found")
-			return revComments, nil
-		}
-
-		listOps.Page = resp.NextPage
-		return revComments, nil
+func GetReviewCommentsPaginator(client GitHubPullRequestsClient, org, repo string, prNumber int, revID int64) func(opts *RateLimitedPage) ([]*github.PullRequestComment, *github.Response, error) {
+	return func(opts *RateLimitedPage) ([]*github.PullRequestComment, *github.Response, error) {
+		return client.ListReviewComments(context.Background(), org, repo, prNumber, revID, &opts.ListOptions)
 	}
 }
