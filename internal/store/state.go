@@ -1,22 +1,12 @@
-package config
+package store
 
-import "time"
-
-const (
-	PerPage = 10 // Drop this down to test out the pagination!
-	PrState = "open"
-	ConfigFileName = ".goPR.json"
-	StateFileName = ".goPRState.json"
+import (
+	"encoding/json"
+	"os"
+	"time"
 )
 
-type Repo struct {
-	Org  string `json:"org"`
-	Repo string `json:"repo"`
-}
-type Config struct {
-	Repos []Repo `json:"repos"`
-}
-
+// State for the app
 type PRReviewComment  struct {
 	ID int64 `json:"commentID"`
 	UpdatedAt time.Time `json:"commentUpdatedAt"`
@@ -44,3 +34,14 @@ type GHState struct {
 	RepoStates []RepoState `json:"repoStates"`
 }
 
+func WriteState(stateFilePath string, state *GHState) error {
+	stateData, err := json.Marshal(state)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(stateFilePath, stateData, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bebrws/goPR/config"
+	"github.com/bebrws/goPR/internal/store"
 	"github.com/google/go-github/v65/github"
 )
 
@@ -64,10 +64,13 @@ type GitHubPullRequestsClient interface {
 	ListReviewComments(ctx context.Context, owner, repo string, number int, reviewID int64, opts *github.ListOptions) ([]*github.PullRequestComment, *github.Response, error)
 }
 
-func NewClientOrPanic(ghToken string) *github.PullRequestsService {
+func NewPRClientOrPanic(ghToken string) *github.PullRequestsService {
 	client := github.NewClient(nil).WithAuthToken(ghToken)
 	if client == nil {
 		log.Fatal("Failed to create GitHub client")
+	}
+	if client.PullRequests == nil {
+		log.Fatal("Failed to get GitHub PullRequest client")
 	}
 	return client.PullRequests
 }
@@ -77,7 +80,7 @@ func paginate[R PaginateAbleGithubTypes](opts *RateLimitedPage, pf func(opts *Ra
 	if opts == nil {
 		rlp := RateLimitedPage{
 			ListOptions: github.ListOptions{
-				PerPage: config.PerPage,
+				PerPage: store.PerPage,
 			},
 		}
 		listOps = NewRateLimitedPage(&rlp, nil)
@@ -89,7 +92,7 @@ func paginate[R PaginateAbleGithubTypes](opts *RateLimitedPage, pf func(opts *Ra
 		items, resp, err := pf(listOps)
 		listOps.Update( resp )
 
-		if resp.Rate.Remaining == 0 {
+		if resp.Rate.Remaining <= 0 {
 			log.Println("Rate limit reached, time to panic")
 			return allItems, NewRateLimitError("Rate limit reached")
 		} else if resp != nil {
@@ -99,11 +102,12 @@ func paginate[R PaginateAbleGithubTypes](opts *RateLimitedPage, pf func(opts *Ra
 		if err != nil {	
 			return allItems, err
 		}
+
 		if len(items) == 0 {
 			break
 		}
 		allItems = append(allItems, items...)
-		if len(items) < config.PerPage {
+		if len(items) < store.PerPage {
 			break
 		}
 	}
@@ -114,7 +118,7 @@ func GetPRPaginator(client GitHubPullRequestsClient, org, repo string) func(opts
 	return func(opts *RateLimitedPage) ([]*github.PullRequest, *github.Response, error) {
 		prLO := github.PullRequestListOptions{
 			ListOptions: opts.ListOptions,
-			State: config.PrState,
+			State: store.PrState,
 		}
 		return client.List(context.Background(), org, repo, &prLO)
 	}
