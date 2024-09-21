@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bebrws/goPR/internal/store"
+	"github.com/bebrws/goPR/config"
 	"github.com/google/go-github/v65/github"
 )
 
@@ -80,7 +80,7 @@ func paginate[R PaginateAbleGithubTypes](opts *RateLimitedPage, pf func(opts *Ra
 	if opts == nil {
 		rlp := RateLimitedPage{
 			ListOptions: github.ListOptions{
-				PerPage: store.PerPage,
+				PerPage: config.PerPage,
 			},
 		}
 		listOps = NewRateLimitedPage(&rlp, nil)
@@ -107,7 +107,7 @@ func paginate[R PaginateAbleGithubTypes](opts *RateLimitedPage, pf func(opts *Ra
 			break
 		}
 		allItems = append(allItems, items...)
-		if len(items) < store.PerPage {
+		if len(items) < config.PerPage {
 			break
 		}
 	}
@@ -118,7 +118,7 @@ func GetPRPaginator(client GitHubPullRequestsClient, org, repo string) func(opts
 	return func(opts *RateLimitedPage) ([]*github.PullRequest, *github.Response, error) {
 		prLO := github.PullRequestListOptions{
 			ListOptions: opts.ListOptions,
-			State: store.PrState,
+			State: config.PrState,
 		}
 		return client.List(context.Background(), org, repo, &prLO)
 	}

@@ -6,12 +6,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bebrws/goPR/config"
 	"github.com/bebrws/goPR/internal/gh"
 	"github.com/bebrws/goPR/internal/store"
 	"github.com/google/go-github/v65/github"
 )
 
 type Deps struct {
+	HomeDir string
 	ExecutablePath string
 	Client         gh.GitHubPullRequestsClient
 	Config         store.Config
@@ -75,11 +77,12 @@ func NewDepsOrPanic() *Deps {
 	homeDir := GetHomeDirOrPanic()
 	ghToken := GetGHTokenOrPanic()
 	client := GetGHPPRClientOrPanic(ghToken)
-	configFilePath := filepath.Join(homeDir, store.ConfigFileName)
-	stateFilePath := filepath.Join(homeDir, store.StateFileName)
+	configFilePath := filepath.Join(homeDir, config.ConfigFileName)
+	stateFilePath := filepath.Join(homeDir, config.StateFileName)
 	cfg := GetCfgOrPanic(configFilePath)
 	oldState := GetOldStateOrPanic(stateFilePath)
 	return &Deps{
+		HomeDir: homeDir,
 		ExecutablePath: os.Args[0],
 		Client:         client,
 		Config:         cfg,

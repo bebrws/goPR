@@ -6,6 +6,7 @@ import (
 
 	"github.com/bebrws/goPR/internal/di"
 	"github.com/bebrws/goPR/internal/gh"
+	"github.com/bebrws/goPR/internal/launchagent"
 	"github.com/bebrws/goPR/internal/store"
 
 	"github.com/bebrws/goPR/internal/notify"
@@ -13,6 +14,8 @@ import (
 
 func main() {
 	deps := di.NewDepsOrPanic()
+
+	launchagent.CreateLaunchAgent(deps)
 	
 	newGHState, err := gh.GetRepoState(deps.Client, &deps.Config)
 	if err != nil {
