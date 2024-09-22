@@ -13,6 +13,12 @@ import (
 )
 
 func main() {
+	nc := notify.NewNotificationChannel("com.bebrws.goPR")
+	_, err := nc.Send("PR Changes", "changeString")
+	if err != nil {
+		log.Println("Error sending notification: ", err)
+	}
+
 	deps := di.NewDepsOrPanic()
 
 	launchagent.CreateLaunchAgent(deps)
