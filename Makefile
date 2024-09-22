@@ -10,9 +10,9 @@ goPR.app/Contents/MacOS/goPR: $(GO_FILES)
 	cp Info.plist goPR.app/Contents
 	GO111MODULE=on go build -o goPR.app/Contents/MacOS/goPR cmd/main.go
 
-# sign:
-# 	@echo "No longer needed"
-# 	sudo codesign -s - --deep goPR.app || true
+sign:
+	@echo "No longer needed"
+	sudo codesign -s - --deep goPR.app || true
 
 clean:
 	rm -rf goPR.app
@@ -20,7 +20,7 @@ clean:
 run: goPR.app/Contents/MacOS/goPR
 	goPR.app/Contents/MacOS/goPR
 
-install:
+install: goPR.app/Contents/MacOS/goPR sign
 	@echo "Will install a LaunchAgent to run this every 1200 seconds by default"
 	@echo "Run: goPR.app/Contents/MacOS/goPR install numSeconds"
 	@echo "to change the interval"
