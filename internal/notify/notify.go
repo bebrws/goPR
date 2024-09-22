@@ -54,7 +54,7 @@ void setup() {
 		NSLog(@"Getting application bundle");
 		enabled = NO;
 		hasBundle = NO;
-		NSBundle *main =  [NSBundle mainBundle]; // [NSBundle bundleWithIdentifier:@"com.test.goPR"]; // [NSBundle mainBundle];
+		NSBundle *main =  [NSBundle mainBundle];
 		if (main.bundleIdentifier == nil) {
 			NSLog(@"No app bundle.");
 			return;
@@ -141,7 +141,6 @@ import (
 
 func init() {
 	runtime.LockOSThread()
-	C.setup()
 }
 
 type NotificationChannel struct {
@@ -149,6 +148,7 @@ type NotificationChannel struct {
 }
 
 func NewNotificationChannel(id string) NotificationChannel {
+	C.setup()
 	return NotificationChannel{id: C.CString(id)}
 }
 

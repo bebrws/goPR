@@ -6,5 +6,6 @@ type Repo struct {
 	Repo string `json:"repo"`
 }
 type Config struct {
+	GHToken string `json:"ghtoken"`
 	Repos []Repo `json:"repos"`
 }

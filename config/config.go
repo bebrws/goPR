@@ -6,6 +6,7 @@ const (
 	ConfigFileName = ".goPR.json"
 	StateFileName = ".goPRState.json"
 	LaunchAgentLabel = "goPR"
-	LaunchAgentPlist = "goPR.plist"
+	LaunchAgentPlist = "com.bebrws.goPR.plist"
 	LaunchAgentInterval = 1200
+	BundleID = "com.bebrws.goPR"
 )

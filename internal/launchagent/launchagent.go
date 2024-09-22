@@ -28,6 +28,10 @@ const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 	<true/>
 	<key>KeepAlive</key>
 	<false/>
+	<key>StandardOutPath</key>
+	<string>/tmp/goPR.log</string>
+	<key>StandardErrorPath</key>
+	<string>/tmp/goPRerror.log</string>
 </dict>
 </plist>
 `
@@ -81,7 +85,7 @@ func CreateLaunchAgent(deps *di.Deps, intervalSeconds int) error {
 	}
 
 	plistData := PlistData{
-		Label:      config.LaunchAgentLabel,
+		Label:      config.BundleID,
 		Executable: executable,
 		Interval: intervalSeconds,
 	}

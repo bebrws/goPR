@@ -22,15 +22,6 @@ type Deps struct {
 	ConfigFilePath string
 }
 
-func GetGHTokenOrPanic() string {
-	ghToken := os.Getenv("GH_TOKEN")
-	if ghToken == "" {
-		log.Fatal("GH_TOKEN is not set")
-		ghToken = "" // Default value
-	}
-	return ghToken
-}
-
 func GetGHPPRClientOrPanic(ghToken string) *github.PullRequestsService {
 	if ghToken == "" {
 		log.Fatal("GH_TOKEN is not set")
@@ -76,12 +67,11 @@ func GetOldStateOrPanic(stateFilePath string) store.GHState {
 
 func NewDepsOrPanic() *Deps {
 	homeDir := GetHomeDirOrPanic()
-	ghToken := GetGHTokenOrPanic()
-	client := GetGHPPRClientOrPanic(ghToken)
 	configFilePath := filepath.Join(homeDir, config.ConfigFileName)
 	stateFilePath := filepath.Join(homeDir, config.StateFileName)
 	cfg := GetCfgOrPanic(configFilePath)
 	oldState := GetOldStateOrPanic(stateFilePath)
+	client := GetGHPPRClientOrPanic(cfg.GHToken)
 	return &Deps{
 		HomeDir: homeDir,
 		ExecutablePath: os.Args[0],

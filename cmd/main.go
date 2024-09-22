@@ -22,7 +22,7 @@ func main() {
 	fmt.Printf("goPR - Located at %s takes the following arguments:\n", deps.ExecutablePath)
 	fmt.Printf("%s install - to install the launch agent\n", deps.ExecutablePath)
 	fmt.Printf("%s clean - to clean the launch agent and state and config file\n", deps.ExecutablePath)
-	if os.Args[1] == "install" {
+	if len(os.Args) > 1 && os.Args[1] == "install" {
 		interval := config.LaunchAgentInterval
 		if len(os.Args) == 3 {
 			argsInterval, err := strconv.Atoi(os.Args[2])
@@ -31,8 +31,10 @@ func main() {
 			}
 			interval = argsInterval
 		}
+		fmt.Println("Instaling launch agent - interval: ", interval)
 		launchagent.CreateLaunchAgent(deps, interval)
-	} else if (os.Args[1] == "clean") {
+	} else if len(os.Args) > 1 && os.Args[1] == "clean" {
+		fmt.Println("Deleting launch agent and state and config file")
 		launchagent.CleanLaunchAgent(deps)
 		store.CleanupStateAndConfig(deps.StateFilePath, deps.ConfigFilePath)
 	}
@@ -52,7 +54,8 @@ func main() {
 	log.Println("Changes: ", changeString)
 	
 	if len(diffs) != 0 {
-		nc := notify.NewNotificationChannel("com.test.goPR")
+		log.Println("Sending notification")
+		nc := notify.NewNotificationChannel(config.BundleID)
 		_, err = nc.Send("PR Changes", changeString)
 		if err != nil {
 			log.Println("Error sending notification: ", err)
