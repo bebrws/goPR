@@ -22,5 +22,9 @@
 	<string>1000</string>
 	<key>CFBundleShortVersionString</key>
 	<string>Build 1000</string>
+	<key>NSUserSelectedReadWriteAttribute</key>
+	<array>
+		<string>public.folder</string>
+	</array>
 </dict>
 </plist>

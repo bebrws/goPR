@@ -19,6 +19,7 @@ type Deps struct {
 	Config         store.Config
 	OldState       store.GHState
 	StateFilePath  string
+	ConfigFilePath string
 }
 
 func GetGHTokenOrPanic() string {
@@ -88,5 +89,6 @@ func NewDepsOrPanic() *Deps {
 		Config:         cfg,
 		OldState:       oldState,
 		StateFilePath:  stateFilePath,
+		ConfigFilePath: configFilePath,
 	}
 }

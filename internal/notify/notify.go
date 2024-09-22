@@ -54,7 +54,7 @@ void setup() {
 		NSLog(@"Getting application bundle");
 		enabled = NO;
 		hasBundle = NO;
-		NSBundle *main =  [NSBundle mainBundle]; // [NSBundle bundleWithIdentifier:@"com.bebrws.goPR"]; // [NSBundle mainBundle];
+		NSBundle *main =  [NSBundle mainBundle]; // [NSBundle bundleWithIdentifier:@"com.test.goPR"]; // [NSBundle mainBundle];
 		if (main.bundleIdentifier == nil) {
 			NSLog(@"No app bundle.");
 			return;

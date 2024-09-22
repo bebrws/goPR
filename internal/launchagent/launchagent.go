@@ -23,7 +23,7 @@ const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 		<string>{{.Executable}}</string>
 	</array>
 	<key>StartInterval</key>
-	<integer>1200</integer> <!-- 1200 seconds = 20 minutes -->
+	<integer>{{.Interval}}</integer> <!-- 1200 seconds = 20 minutes -->
 	<key>RunAtLoad</key>
 	<true/>
 	<key>KeepAlive</key>
@@ -36,17 +36,37 @@ const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 type PlistData struct {
 	Label      string
 	Executable string
+	Interval  int
+}
+
+func CleanLaunchAgent(deps *di.Deps) error {
+	plistPath := filepath.Join(deps.HomeDir, "Library", "LaunchAgents", config.LaunchAgentPlist)
+
+	// Check if the plist already exists
+	if _, err := os.Stat(plistPath); err != nil {
+		fmt.Printf("plist %s doesn't exist, won't clean it\n", plistPath)
+		return nil
+	}
+
+	// Unload the plist using launchctl
+	cmd := exec.Command("launchctl", "unload", plistPath)
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("failed to unload plist with launchctl: %w", err)
+	}
+
+	// Remove the plist file
+	err = os.Remove(plistPath)
+	if err != nil {
+		return fmt.Errorf("failed to remove plist file: %w", err)
+	}
+
+	return nil
 }
 
 // CreateLaunchAgent creates the plist file in ~/Library/LaunchAgents/ if it doesn't exist
-func CreateLaunchAgent(deps *di.Deps) error {
-	launchAgentsDir := filepath.Join(deps.HomeDir, "Library", "LaunchAgents")
-	err := os.MkdirAll(launchAgentsDir, 0755)
-	if err != nil {
-		return fmt.Errorf("failed to create LaunchAgents directory: %w", err)
-	}
-
-	plistPath := filepath.Join(launchAgentsDir, config.LaunchAgentLabel+".plist")
+func CreateLaunchAgent(deps *di.Deps, intervalSeconds int) error {
+	plistPath := filepath.Join(deps.HomeDir, "Library", "LaunchAgents", config.LaunchAgentPlist)
 
 	// Check if the plist already exists
 	if _, err := os.Stat(plistPath); err == nil {
@@ -63,6 +83,7 @@ func CreateLaunchAgent(deps *di.Deps) error {
 	plistData := PlistData{
 		Label:      config.LaunchAgentLabel,
 		Executable: executable,
+		Interval: intervalSeconds,
 	}
 
 	// Generate plist content
