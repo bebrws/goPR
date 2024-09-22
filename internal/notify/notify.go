@@ -141,6 +141,7 @@ import (
 
 func init() {
 	runtime.LockOSThread()
+	C.setup()
 }
 
 type NotificationChannel struct {
@@ -148,7 +149,6 @@ type NotificationChannel struct {
 }
 
 func NewNotificationChannel(id string) NotificationChannel {
-	C.setup()
 	return NotificationChannel{id: C.CString(id)}
 }
 

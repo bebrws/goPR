@@ -71,13 +71,7 @@ func CleanLaunchAgent(deps *di.Deps) error {
 // CreateLaunchAgent creates the plist file in ~/Library/LaunchAgents/ if it doesn't exist
 func CreateLaunchAgent(deps *di.Deps, intervalSeconds int) error {
 	plistPath := filepath.Join(deps.HomeDir, "Library", "LaunchAgents", config.LaunchAgentPlist)
-
-	// Check if the plist already exists
-	if _, err := os.Stat(plistPath); err == nil {
-		fmt.Printf("plist %s already exists, won't create a one\n", plistPath)
-		return nil
-	}
-
+	
 	// Gather data for plist template
 	executable, err := os.Executable()
 	if err != nil {
