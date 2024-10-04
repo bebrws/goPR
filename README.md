@@ -1,6 +1,7 @@
 # goPR
 
-Get Native OSX Notifications for GitHub Pull Requests (open PRs, comments, etc)
+
+Somethign Get Native OSX Notifications for GitHub Pull Requests (open PRs, comments, etc)
 
 # TODO:
 

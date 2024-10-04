@@ -27,7 +27,7 @@ install: goPR.app/Contents/MacOS/goPR sign
 	@echo "To remove the LaunchAgent run: goPR.app/Contents/MacOS/goPR clean"
 	@echo "Or: make clean"
 	@echo "from this directory"
-	goPR.app/Contents/MacOS/goPR install 1200
+	goPR.app/Contents/MacOS/goPR install 30
 
 uninstall:
 	@echo "Deleting launch LaunchAgent"

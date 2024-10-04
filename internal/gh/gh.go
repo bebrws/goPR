@@ -25,7 +25,7 @@ func GetRepoState(client GitHubPullRequestsClient, cfg *store.Config) (*store.GH
 			}
 			for j, rev := range allRevs {
 				cmts := []store.PRReviewComment{}
-				
+
 				fmt.Printf("  %d. Review: %s from %s\n", j+1, rev.GetBody(), rev.User.GetLogin())
 
 				allRevComments, err := paginate(nil, GetReviewCommentsPaginator(client, repo.Org, repo.Repo, *pr.Number, *rev.ID))
@@ -35,23 +35,23 @@ func GetRepoState(client GitHubPullRequestsClient, cfg *store.Config) (*store.GH
 
 				for j, revComment := range allRevComments {
 					cmts = append(cmts, store.PRReviewComment{
-						ID: revComment.GetID(),
+						ID:        revComment.GetID(),
 						UpdatedAt: revComment.GetUpdatedAt().Time,
-						Login: revComment.User.GetLogin(),
-						Body:  revComment.GetBody(),
+						Login:     revComment.User.GetLogin(),
+						Body:      revComment.GetBody(),
 					})
 					fmt.Printf("      %d. Review Comment: %s from %s\n", j+1, revComment.GetBody(), revComment.User.GetLogin())
 				}
 				revs = append(revs, store.PRReview{
-					ID: rev.GetID(),
+					ID:       rev.GetID(),
 					Login:    rev.User.GetLogin(),
 					Body:     rev.GetBody(),
 					Comments: cmts,
 				})
 			}
 			prs = append(prs, store.PR{
-				Number: *pr.Number,
-				Body:   *pr.Body,
+				Number:  *pr.Number,
+				Body:    *pr.Body,
 				Reviews: revs,
 			})
 		}
