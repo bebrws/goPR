@@ -3,13 +3,20 @@
 
 ## Config
 
-Requires a config file at `~/.goPR.json` with the following:
+Uses a config file at `~/.goPR.json` with the following format:
 ```json
 {
-	"bundleID": "com.bebrws.goPR",
-	"launchAgentInterval": 1200
+  "ghtoken": "TOKEN",
+  "repos": [
+    {
+      "org": "bebrws",
+      "repo": "2DMessAround"
+    }
+  ]
 }
 ```
+
+## TODOs
 
 Get Native OSX Notifications for GitHub Pull Requests (open PRs, comments, etc)
 
