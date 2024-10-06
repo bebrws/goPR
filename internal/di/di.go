@@ -1,84 +1,122 @@
 package di
 
 import (
+	"context"
 	"encoding/json"
-	"log"
+	"errors"
 	"os"
 	"path/filepath"
 
 	"github.com/bebrws/goPR/config"
 	"github.com/bebrws/goPR/internal/gh"
+	"github.com/bebrws/goPR/internal/models"
 	"github.com/bebrws/goPR/internal/store"
 	"github.com/google/go-github/v65/github"
+	"github.com/sirupsen/logrus"
 )
 
 type Deps struct {
-	HomeDir string
+	HomeDir        string
 	ExecutablePath string
 	Client         gh.GitHubPullRequestsClient
-	Config         store.Config
-	OldState       store.GHState
+	Config         models.Config
+	OldState       models.GHState
 	StateFilePath  string
 	ConfigFilePath string
 }
 
-func GetGHPPRClientOrPanic(ghToken string) *github.PullRequestsService {
+func GetGHPPRClient(ghToken string) (*github.PullRequestsService, error) {
 	if ghToken == "" {
-		log.Fatal("GH_TOKEN is not set")
+		return nil, errors.New("gh token is empty")
 	}
-	return gh.NewPRClientOrPanic(ghToken)
+	return gh.NewPRClient(ghToken), nil
 }
 
-func GetHomeDirOrPanic() string {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal("Error getting home directory:", err)
-	}
-	return homeDir
+func GetHomeDir() (string, error) {
+	return os.UserHomeDir()
 }
 
-func GetCfgOrPanic(configFilePath string) store.Config {
+func GetOrCreateDefaultConfig(configFilePath string) (models.Config, error) {
 	configData, err := os.ReadFile(configFilePath)
+	var cfg models.Config
 	if err != nil {
-		log.Fatal("Error reading config file:", err)
+		logrus.Warn("Config file not found, creating default config")
+		client := gh.NewGHClient(os.Getenv("GITHUB_TOKEN"))
+		gh_username, _, err := client.Users.Get(context.Background(), "")
+		if err != nil {
+			cfg.GHToken = os.Getenv("GITHUB_TOKEN")
+			return cfg, nil
+		}
+		repos, err := gh.Paginate(nil, gh.GetRepoPaginator(client.Repositories, gh_username.GetLogin()))
+		if err != nil {
+			cfg.GHToken = os.Getenv("GITHUB_TOKEN")
+			return cfg, err
+		}
+		cfg = *store.CreateExConfig(repos)
+		logrus.Info("Created default config with all repos. Edit config to select specific repos at ", configFilePath)
+		configFile, err := os.Create(configFilePath)
+		if err != nil {
+			logrus.Warn("Failed to create config file: ", err)
+			return cfg, err
+		}
+		defer configFile.Close()
+
+		encoder := json.NewEncoder(configFile)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(cfg); err != nil {
+			logrus.Warn("Failed to write config to file: ", err)
+			return cfg, err
+		}
+		return cfg, nil
 	}
-	var cfg store.Config
+
 	err = json.Unmarshal(configData, &cfg)
 	if err != nil {
-		log.Fatal("Error unmarshalling JSON:", err)
+		return models.Config{}, err
 	}
-	return cfg
+	return cfg, nil
 }
 
-func GetOldStateOrPanic(stateFilePath string) store.GHState {
-	oldState := store.GHState{}
+func GetOldState(stateFilePath string) (models.GHState, error) {
+	oldState := models.GHState{}
 	oldStateData, err := os.ReadFile(stateFilePath)
 	if err != nil {
-		log.Println("Error reading state oldState file (will attempt to create one):", err)
 		store.WriteState(stateFilePath, &oldState)
-	} else {
-		err = json.Unmarshal(oldStateData, &oldState)
-		if err != nil {
-			log.Fatal("Error unmarshalling oldState JSON:", err)
-		}
+		return oldState, err
 	}
-	return oldState
+	err = json.Unmarshal(oldStateData, &oldState)
+	if err != nil {
+		return oldState, err
+	}
+	return oldState, nil
 }
 
-func NewDepsOrPanic() *Deps {
-	homeDir := GetHomeDirOrPanic()
+func NewDeps() (*Deps, error) {
+	homeDir, err := GetHomeDir()
+	if err != nil {
+		return nil, err
+	}
 	configFilePath := filepath.Join(homeDir, config.ConfigFileName)
 	stateFilePath := filepath.Join(homeDir, config.StateFileName)
-	cfg := GetCfgOrPanic(configFilePath)
-	oldState := GetOldStateOrPanic(stateFilePath)
-	client := GetGHPPRClientOrPanic(cfg.GHToken)
+	cfg, err := GetOrCreateDefaultConfig(configFilePath)
+	if err != nil {
+		return nil, err
+	}
+	oldState, err := GetOldState(stateFilePath)
+	if err != nil {
+		return nil, err
+	}
+	client, err := GetGHPPRClient(cfg.GHToken)
+	if err != nil {
+		return nil, err
+	}
 	return &Deps{
-		HomeDir: homeDir,
+		HomeDir:        homeDir,
 		ExecutablePath: os.Args[0],
 		Client:         client,
 		Config:         cfg,
 		OldState:       oldState,
 		StateFilePath:  stateFilePath,
 		ConfigFilePath: configFilePath,
-	}
+	}, nil
 }

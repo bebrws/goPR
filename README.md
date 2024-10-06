@@ -1,5 +1,16 @@
 # goPR
 
+
+## Config
+
+Requires a config file at `~/.goPR.json` with the following:
+```json
+{
+	"bundleID": "com.bebrws.goPR",
+	"launchAgentInterval": 1200
+}
+```
+
 Get Native OSX Notifications for GitHub Pull Requests (open PRs, comments, etc)
 
 # TODO:

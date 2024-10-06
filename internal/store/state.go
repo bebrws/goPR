@@ -3,38 +3,12 @@ package store
 import (
 	"encoding/json"
 	"os"
-	"time"
+
+	"github.com/bebrws/goPR/internal/models"
+	"github.com/sirupsen/logrus"
 )
 
-// State for the app
-type PRReviewComment  struct {
-	ID int64 `json:"commentID"`
-	UpdatedAt time.Time `json:"commentUpdatedAt"`
-	Login string `json:"commentLogin"`
-	Body string `json:"commentBody"`
-}
-
-type PRReview  struct {
-	ID int64 `json:"reviewID"`
-	Login string `json:"reviewLogin"`
-	Body string `json:"reviewBody"`
-	Comments []PRReviewComment `json:"reviewComments"`
-}
-type PR struct {
-	Number int `json:"prNumber"`
-	Body string `json:"prBody"`
-	Reviews []PRReview `json:"prReviews"`
-}
-
-type RepoState struct {
-	PRs []PR `json:"prs"`
-	Name string `json:"repoName"`
-}
-type GHState struct {
-	RepoStates []RepoState `json:"repoStates"`
-}
-
-func WriteState(stateFilePath string, state *GHState) error {
+func WriteState(stateFilePath string, state *models.GHState) error {
 	stateData, err := json.Marshal(state)
 	if err != nil {
 		return err
@@ -43,5 +17,6 @@ func WriteState(stateFilePath string, state *GHState) error {
 	if err != nil {
 		return err
 	}
+	logrus.Info("State written to file: ", stateFilePath)
 	return nil
 }

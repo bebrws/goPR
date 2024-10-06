@@ -1,61 +1,60 @@
 package gh
 
 import (
-	"fmt"
-
-	"github.com/bebrws/goPR/internal/store"
+	"github.com/bebrws/goPR/internal/models"
+	"github.com/sirupsen/logrus"
 )
 
-func GetRepoState(client GitHubPullRequestsClient, cfg *store.Config) (*store.GHState, error) {
-	state := store.GHState{}
+func GetRepoState(client GitHubPullRequestsClient, cfg *models.Config) (*models.GHState, error) {
+	state := models.GHState{}
 
 	for _, repo := range cfg.Repos {
-		allPrs, err := paginate(nil, GetPRPaginator(client, repo.Org, repo.Repo))
+		allPrs, err := Paginate(nil, GetPRPaginator(client, repo.Org, repo.Repo))
 		if err != nil {
 			return &state, err
 		}
-		prs := []store.PR{}
+		prs := []models.PR{}
 		for _, pr := range allPrs {
-			revs := []store.PRReview{}
-			fmt.Printf("PR %d. PR title: %s\nPR body: %s\n", *pr.Number, *pr.Title, *pr.Body)
+			revs := []models.PRReview{}
+			logrus.Infof("PR %d. PR title: %s\nPR body: %s\n", *pr.Number, *pr.Title, *pr.Body)
 
-			allRevs, err := paginate(nil, GetReviewPaginator(client, repo.Org, repo.Repo, *pr.Number))
+			allRevs, err := Paginate(nil, GetReviewPaginator(client, repo.Org, repo.Repo, *pr.Number))
 			if err != nil {
 				return &state, err
 			}
 			for j, rev := range allRevs {
-				cmts := []store.PRReviewComment{}
-				
-				fmt.Printf("  %d. Review: %s from %s\n", j+1, rev.GetBody(), rev.User.GetLogin())
+				cmts := []models.PRReviewComment{}
 
-				allRevComments, err := paginate(nil, GetReviewCommentsPaginator(client, repo.Org, repo.Repo, *pr.Number, *rev.ID))
+				logrus.Infof("  %d. Review: %s from %s\n", j+1, rev.GetBody(), rev.User.GetLogin())
+
+				allRevComments, err := Paginate(nil, GetReviewCommentsPaginator(client, repo.Org, repo.Repo, *pr.Number, *rev.ID))
 				if err != nil {
 					return &state, err
 				}
 
 				for j, revComment := range allRevComments {
-					cmts = append(cmts, store.PRReviewComment{
-						ID: revComment.GetID(),
+					cmts = append(cmts, models.PRReviewComment{
+						ID:        revComment.GetID(),
 						UpdatedAt: revComment.GetUpdatedAt().Time,
-						Login: revComment.User.GetLogin(),
-						Body:  revComment.GetBody(),
+						Login:     revComment.User.GetLogin(),
+						Body:      revComment.GetBody(),
 					})
-					fmt.Printf("      %d. Review Comment: %s from %s\n", j+1, revComment.GetBody(), revComment.User.GetLogin())
+					logrus.Infof("      %d. Review Comment: %s from %s\n", j+1, revComment.GetBody(), revComment.User.GetLogin())
 				}
-				revs = append(revs, store.PRReview{
-					ID: rev.GetID(),
+				revs = append(revs, models.PRReview{
+					ID:       rev.GetID(),
 					Login:    rev.User.GetLogin(),
 					Body:     rev.GetBody(),
 					Comments: cmts,
 				})
 			}
-			prs = append(prs, store.PR{
-				Number: *pr.Number,
-				Body:   *pr.Body,
+			prs = append(prs, models.PR{
+				Number:  *pr.Number,
+				Body:    *pr.Body,
 				Reviews: revs,
 			})
 		}
-		state.RepoStates = append(state.RepoStates, store.RepoState{
+		state.RepoStates = append(state.RepoStates, models.RepoState{
 			Name: repo.Repo,
 			PRs:  prs,
 		})
